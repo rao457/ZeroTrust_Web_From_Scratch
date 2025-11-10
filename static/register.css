@@ -1,0 +1,88 @@
+/* Form styling (consistent with contact page) */
+body{
+  background: #eaf6fb;
+    color: #222;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+.form-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  max-width: 500px;
+  margin: 3rem auto;
+}
+
+.form-title {
+  color: #27ae60;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.form label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.btn {
+  margin-top: 1.5rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.form-footer a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+}
+.nav {
+  margin-bottom: 24px;
+  text-align: center;
+}
+.nav a {
+  color: #2a7ae2;
+  text-decoration: none;
+  margin-right: 18px;
+  font-weight: 500;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+
+footer{
+  text-align: center;
+}
