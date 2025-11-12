@@ -5,7 +5,7 @@
 }
 a{
     text-decoration: none;
-    color: #27ae60;
+    color: #007bff;
 }
 body{
     background: #eaf6fb;
@@ -13,14 +13,18 @@ body{
     font-family: 'Segoe UI', Arial, sans-serif;
     height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 5em ;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 2rem;
+    /* padding-top: 5em ; */
 }
 .form-container{
+    border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     /* border: 2px solid black; */
     padding: 20px;
-    height: 60%;
+    height: 70%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -60,4 +64,21 @@ button{
 h1{
      color: #27ae60;
             font-weight: bold;
+}
+
+.nav {
+  margin-bottom: 24px;
+  text-align: center;
+}
+.nav a {
+  color: #2a7ae2;
+  text-decoration: none;
+  margin-right: 18px;
+  font-weight: 500;
+}
+.nav a:hover {
+  text-decoration: underline;
+}
+.footer{
+    margin-top: 2rem;
 }
