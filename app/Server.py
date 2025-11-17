@@ -10,6 +10,7 @@ from app.auth_utils import hash_passwd, check_password
 from auth_handles.Handle_Login import handle_login
 from auth_handles.Handle_Register import handle_register
 from auth_handles.Handle_Contact import handle_contact
+from app.session_repo import get_user_by_session
 # Constact Dirs addresses
 
 TEMPLATE_DIRS =   'templates'
@@ -18,6 +19,7 @@ HOST = '127.0.0.1'
 PORT = 8080
 
 def handle_client(client_socket, client_address):
+    filepath=""
     print(f"📩 Connection from {client_address}")
     
     try:
@@ -32,6 +34,17 @@ def handle_client(client_socket, client_address):
             client_socket.sendall(response)
             return
         print(f"👉 Method: {method}, Path: {path}")
+
+        # Session Config
+        user = None
+        cookie_header = header.get("Cookie")
+        
+        if cookie_header:
+            cookies = dict(c.split("=", 1) for c in cookie_header.split("; ") if "=" in c)
+            session_id = cookies.get("session_id")
+            if session_id:
+                user = get_user_by_session(session_id)
+                print(f"👤 {user}")
         
         if path == "/":
             filepath = os.path.join(TEMPLATE_DIRS, 'home.html') 
@@ -39,44 +52,81 @@ def handle_client(client_socket, client_address):
         # HANDLING CONTACT FORM
         
         elif path == "/contact" and method == "POST":
-            handle_contact(client_socket, body)
+            response = handle_contact(client_socket, body)
+            if response is not None:
+                client_socket.sendall(response)
+                return
             
         # HANDLING THE REGISTER ROUTE
         
         elif path == '/register' and method == "GET":
             filepath = os.path.join(TEMPLATE_DIRS, 'register.html')
         elif path == '/register' and method == "POST":
-            handle_register(client_socket, body)
+            response = handle_register(client_socket, body)
+            if response is not None:
+                client_socket.sendall(response)
+                return
             
         # HANDLING THE LOGIN ROUTE
         elif path == "/login" and method == "GET":
             filepath = os.path.join(TEMPLATE_DIRS, 'login.html')             
         elif path == "/login" and method == "POST":
-            handle_login(client_socket, body)
-        
+            response = handle_login(client_socket, body)
+            if response is not None:
+                client_socket.sendall(response)
+                return
                    
         elif path.startswith("/static/"):
             filepath = path.lstrip("/")
+        elif path.startswith("/logout"):
+            print("Entered logout block")
+
+            if session_id:
+                from app.session_repo import delete_session
+                delete_session(session_id)
+
+            response  = b"HTTP/1.1 302 Found\r\n"
+            response += b"Location: /\r\n"
+            response += b"Set-Cookie: session_id=; Max-Age=0; Path=/\r\n"
+            response += b"Content-Length: 0\r\n"
+            response += b"Connection: close\r\n"
+            response += b"\r\n"
+
+            print("Sending Logout Redirect...")
+            client_socket.sendall(response)
+            return
         else:
             if "?" in path:
                 path, query = path.split("?", 1)
             else:
                 query = ""
             filepath = os.path.join(TEMPLATE_DIRS, path.lstrip("/")+".html")
+        
             
         binary = not filepath.endswith(".html")
         body = load_file(filepath, binary=binary)
         
         if body is None:
-            response = make_response(404, "<h1>Page not found</h1>")
+            response = make_response(404, "<h1>I am at line 72 Page not found</h1>")
         else:
             content_type = guess_mime_type(filepath)
+            
+            if not binary:
+                if isinstance(body, bytes):
+                    body = body.decode()
+                replacement = (
+                    f"<a href='/logout'>Logout</a>  |   Welcome {user}"
+                    if user else
+                    "<a href='/login'>Login</a>     <a href='/register'>Sign Up</a>"
+                )  
+                body = body.replace("{{ auth_links }}", replacement)
+                body = body.encode()
             response = make_response(200, body, content_type)
         client_socket.sendall(response)
         
     except Exception as e:
         print(f"⚠️ Error handling client {client_address}: {e}")
-        error_response = make_response(500, "<h1>500 Internal Server Error</h1>")
+        error_response = make_response(500, "<h2>500 Internal Server Error</h2>")
         client_socket.sendall(error_response)
     finally:
         client_socket.close()

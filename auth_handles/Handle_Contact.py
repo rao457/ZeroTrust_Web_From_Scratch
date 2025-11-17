@@ -21,6 +21,6 @@ def handle_contact(client_socket, body):
         "Connection: close\r\n"
         "\r\n"
     ).encode("utf-8")
-    client_socket.sendall(response)
-    client_socket.close()
-    return
+    # client_socket.sendall(response)
+    # client_socket.close()
+    return response

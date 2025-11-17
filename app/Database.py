@@ -25,6 +25,13 @@ def init_db():
             )
             """
         )
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sessions(
+                session_id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         print("📦 Database initialize")
 
 
