@@ -11,15 +11,16 @@ from auth_handles.Handle_Login import handle_login
 from auth_handles.Handle_Register import handle_register
 from auth_handles.Handle_Contact import handle_contact
 from app.session_repo import get_user_by_session
-# Constact Dirs addresses
 
-TEMPLATE_DIRS =   'templates'
+TEMPLATE_DIRS = 'templates'
 STATIC_DIRS = 'static/'
-HOST = '127.0.0.1'
-PORT = 8080
+
+# REQUIRED FOR RENDER
+HOST = "0.0.0.0"
+PORT = int(os.environ.get("PORT", 8080))
 
 def handle_client(client_socket, client_address):
-    filepath=""
+    filepath = ""
     print(f"📩 Connection from {client_address}")
     
     try:
@@ -28,14 +29,12 @@ def handle_client(client_socket, client_address):
         print(request)
         print("-----------------------")
         
-        method, path, header, body= parse_http_request(request)
+        method, path, header, body = parse_http_request(request)
         if not method or not path:
-            response = make_response(400, "<h1>Bad Request 4000</h1>")
+            response = make_response(400, "<h1>Bad Request</h1>")
             client_socket.sendall(response)
             return
-        print(f"👉 Method: {method}, Path: {path}")
 
-        # Session Config
         user = None
         cookie_header = header.get("Cookie")
         
@@ -45,103 +44,98 @@ def handle_client(client_socket, client_address):
             if session_id:
                 user = get_user_by_session(session_id)
                 print(f"👤 {user}")
-        
+        else:
+            session_id = None
+
         if path == "/":
-            filepath = os.path.join(TEMPLATE_DIRS, 'home.html') 
-        
-        # HANDLING CONTACT FORM
-        
+            filepath = os.path.join(TEMPLATE_DIRS, 'home.html')
+
         elif path == "/contact" and method == "POST":
             response = handle_contact(client_socket, body)
-            if response is not None:
-                client_socket.sendall(response)
-                return
-            
-        # HANDLING THE REGISTER ROUTE
-        
-        elif path == '/register' and method == "GET":
+            client_socket.sendall(response)
+            return
+
+        elif path == "/register" and method == "GET":
             filepath = os.path.join(TEMPLATE_DIRS, 'register.html')
-        elif path == '/register' and method == "POST":
+
+        elif path == "/register" and method == "POST":
             response = handle_register(client_socket, body)
-            if response is not None:
-                client_socket.sendall(response)
-                return
-            
-        # HANDLING THE LOGIN ROUTE
+            client_socket.sendall(response)
+            return
+
         elif path == "/login" and method == "GET":
-            filepath = os.path.join(TEMPLATE_DIRS, 'login.html')             
+            filepath = os.path.join(TEMPLATE_DIRS, 'login.html')
+
         elif path == "/login" and method == "POST":
             response = handle_login(client_socket, body)
-            if response is not None:
-                client_socket.sendall(response)
-                return
-                   
+            client_socket.sendall(response)
+            return
+
         elif path.startswith("/static/"):
             filepath = path.lstrip("/")
+
         elif path.startswith("/logout"):
             print("Entered logout block")
-
+            from app.session_repo import delete_session
             if session_id:
-                from app.session_repo import delete_session
                 delete_session(session_id)
 
             response  = b"HTTP/1.1 302 Found\r\n"
             response += b"Location: /\r\n"
-            response += b"Set-Cookie: session_id=; Max-Age=0; Path=/\r\n"
+            response += b"Set-Cookie: session_id=; Max-Age=0; Path=/; HttpOnly\r\n"
             response += b"Content-Length: 0\r\n"
-            response += b"Connection: close\r\n"
-            response += b"\r\n"
+            response += b"Connection: close\r\n\r\n"
 
-            print("Sending Logout Redirect...")
             client_socket.sendall(response)
             return
+
         else:
             if "?" in path:
                 path, query = path.split("?", 1)
-            else:
-                query = ""
-            filepath = os.path.join(TEMPLATE_DIRS, path.lstrip("/")+".html")
-        
-            
+            filepath = os.path.join(TEMPLATE_DIRS, path.lstrip("/") + ".html")
+
         binary = not filepath.endswith(".html")
         body = load_file(filepath, binary=binary)
         
         if body is None:
-            response = make_response(404, "<h1>I am at line 72 Page not found</h1>")
+            response = make_response(404, "<h1>404 Not Found</h1>")
         else:
             content_type = guess_mime_type(filepath)
-            
             if not binary:
                 if isinstance(body, bytes):
                     body = body.decode()
+
                 replacement = (
-                    f"<a href='/logout'>Logout</a>  |   Welcome {user}"
+                    f"<a href='/logout'>Logout</a> | Welcome {user}"
                     if user else
-                    "<a href='/login'>Login</a>     <a href='/register'>Sign Up</a>"
-                )  
+                    "<a href='/login'>Login</a> <a href='/register'>Sign Up</a>"
+                )
                 body = body.replace("{{ auth_links }}", replacement)
                 body = body.encode()
+
             response = make_response(200, body, content_type)
+
         client_socket.sendall(response)
-        
+
     except Exception as e:
-        print(f"⚠️ Error handling client {client_address}: {e}")
-        error_response = make_response(500, "<h2>500 Internal Server Error</h2>")
-        client_socket.sendall(error_response)
+        print(f"⚠️ Error: {e}")
+        response = make_response(500, "<h1>Internal Server Error</h1>")
+        client_socket.sendall(response)
+
     finally:
         client_socket.close()
-        
-# Main Server
+
+
 def server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((HOST, PORT))
     server_socket.listen(5)
 
-    print(f"🚀 Server is running on http://{HOST}:{PORT}")
+    print(f"🚀 Server running on {HOST}:{PORT}")
     init_db()
-    print("📦 Database ready!")
+    print("📦 Database ready.")
+
     while True:
         client_socket, client_addr = server_socket.accept()
-        thread = threading.Thread(target=handle_client, args=(client_socket, client_addr))
-        thread.start()
+        threading.Thread(target=handle_client, args=(client_socket, client_addr)).start()
