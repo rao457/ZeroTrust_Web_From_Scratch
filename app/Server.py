@@ -16,12 +16,12 @@ TEMPLATE_DIRS = 'templates'
 STATIC_DIRS = 'static/'
 
 # REQUIRED FOR RENDER
-HOST = "0.0.0.0"
+HOST ="127.0.0.1"
 PORT = int(os.environ.get("PORT", 8080))
 
 def handle_client(client_socket, client_address):
     filepath = ""
-    print(f"📩 Connection from {client_address}")
+    # print(f"📩 Connection from {client_address}")
     
     try:
         request = client_socket.recv(1024).decode('utf-8', errors="ignore")
@@ -118,7 +118,7 @@ def handle_client(client_socket, client_address):
         client_socket.sendall(response)
 
     except Exception as e:
-        print(f"⚠️ Error: {e}")
+        # print(f"⚠️ Error: {e}")
         response = make_response(500, "<h1>Internal Server Error</h1>")
         client_socket.sendall(response)
 
@@ -134,7 +134,7 @@ def server():
 
     print(f"🚀 Server running on {HOST}:{PORT}")
     init_db()
-    print("📦 Database ready.")
+    # print("📦 Database ready.")
 
     while True:
         client_socket, client_addr = server_socket.accept()
